@@ -1,0 +1,49 @@
+name: web
+description: Web research specialist agent with search and deep research skills
+version: 1.2.0
+
+author:
+  name: Your Name
+
+license: MIT
+
+keywords:
+  - web-search
+  - research
+  - documentation
+
+mcpServers: ./.mcp.json
+hooks: ./hooks/hooks.json
+
+agents:
+  - name: web-searcher
+    path: ./agents/web-searcher.md
+    description: >-
+      Web research specialist. Use proactively for searching the web, finding
+      documentation, fetching article content, or researching topics across
+      multiple sources. Returns concise summaries with source URLs for citation
+      and further reading.
+    claude:
+      color: green
+    copilot:
+      user-invocable: false
+      tools:
+        - read
+        - search
+        - edit
+        - execute
+        - web
+        - web-search/*
+
+skills:
+  - name: web-research
+    path: ./skills/web-research
+    argument-hint: "[search | research] [question or topic]"
+    description: |
+      Web search and deep research workflows. Use when the user wants to look
+      something up, search the web, research a topic, find documentation, or
+      get a well-sourced answer. Triggers: search, look up, find, research,
+      what is, how does, compare, web search, find docs, look into, investigate,
+      deep dive, explore topic. Use this skill when the user asks a factual
+      question that requires external information, even if they don't
+      explicitly say "search" or "research."

@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jrob5756/plugins/schemas/plugin.schema.json",
+  "title": "Plugin manifest (source)",
+  "description": "Declarative source-of-truth manifest for a plugin. Transpiled into Claude Code and GitHub Copilot plugin formats.",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "description": "Plugin identifier. Kebab-case, must match the parent directory name."
+    },
+    "description": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.+-]+)?$" },
+    "displayName": { "type": "string" },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "homepage": { "type": "string", "format": "uri" },
+    "repository": { "type": "string", "format": "uri" },
+    "license": { "type": "string" },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "mcpServers": {
+      "type": "string",
+      "description": "Path to the plugin's .mcp.json file, relative to the plugin root."
+    },
+    "hooks": {
+      "type": "string",
+      "description": "Path to the plugin's hooks.json file, relative to the plugin root."
+    },
+    "agents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/agent" },
+      "uniqueItems": true
+    },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skill" },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "required": ["name", "path", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "path": { "type": "string", "pattern": "^\\./" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "argument-hint": { "type": "string" },
+        "claude": { "$ref": "#/$defs/agentClaude" },
+        "copilot": { "$ref": "#/$defs/agentCopilot" },
+        "opencode": { "$ref": "#/$defs/agentOpencode" }
+      }
+    },
+    "agentClaude": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": { "type": "string" },
+        "effort": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+        "maxTurns": { "type": "integer", "minimum": 1 },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "not": { "pattern": "\\*" }
+          },
+          "description": "Allowed tools. Omit entirely to inherit all tools. Globs (server/*) are NOT supported on Claude — list each tool by name, or omit the field."
+        },
+        "disallowedTools": { "type": "array", "items": { "type": "string" } },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "memory": { "type": "string", "enum": ["user", "project", "local"] },
+        "background": { "type": "boolean" },
+        "isolation": { "type": "string", "enum": ["worktree"] },
+        "color": {
+          "type": "string",
+          "description": "Display color. Spec accepts red/blue/green/yellow/purple/orange/pink/cyan, but we allow any string so authors can use hex (e.g. '#6965db') or extended names; unsupported values are silently ignored by Claude."
+        }
+      }
+    },
+    "agentCopilot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed tools. Supports server/* glob syntax."
+        },
+        "agents": {
+          "oneOf": [
+            { "const": "*" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "user-invocable": { "type": "boolean" },
+        "disable-model-invocation": { "type": "boolean" },
+        "target": { "type": "string", "enum": ["vscode", "github-copilot"] }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "required": ["name", "path", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+        "path": { "type": "string", "pattern": "^\\./" },
+        "description": { "type": "string", "minLength": 10, "maxLength": 1024 },
+        "argument-hint": { "type": "string" },
+        "claude": { "$ref": "#/$defs/skillClaude" },
+        "copilot": { "$ref": "#/$defs/skillCopilot" },
+        "opencode": { "$ref": "#/$defs/skillOpencode" }
+      }
+    },
+    "skillClaude": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "disable-model-invocation": { "type": "boolean" }
+      }
+    },
+    "skillCopilot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "user-invocable": { "type": "boolean" },
+        "disable-model-invocation": { "type": "boolean" },
+        "context": { "type": "string", "enum": ["inline", "fork"] }
+      }
+    },
+    "agentOpencode": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "OpenCode-specific overrides. See docs/opencode.md.",
+      "properties": {
+        "mode": { "type": "string", "enum": ["primary", "subagent", "all"] },
+        "model": { "type": "string", "description": "provider/model-id (e.g. anthropic/claude-sonnet-4-5)." },
+        "variant": { "type": "string" },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 1 },
+        "top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+        "steps": { "type": "integer", "minimum": 1 },
+        "hidden": { "type": "boolean" },
+        "color": { "type": "string" },
+        "disable": { "type": "boolean" },
+        "permission": {
+          "type": "object",
+          "description": "Per-agent permission overrides. See docs/opencode.md#permissions.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "skillOpencode": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "OpenCode-specific skill overrides. See docs/opencode.md.",
+      "properties": {
+        "license": { "type": "string" },
+        "compatibility": { "type": "string" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

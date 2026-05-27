@@ -1,0 +1,17 @@
+{
+  "name": "plugin-marketplace-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Template repository for building Claude Code, GitHub Copilot, and OpenCode plugin marketplaces from a single tool-agnostic source.",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "validate": "node tools/build.mjs --validate-only",
+    "clean": "node tools/build.mjs --clean"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0"
+  }
+}

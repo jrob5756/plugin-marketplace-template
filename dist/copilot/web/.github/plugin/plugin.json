@@ -1,0 +1,16 @@
+{
+  "name": "web",
+  "description": "Web research specialist agent with search and deep research skills",
+  "version": "1.2.0",
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
+  "keywords": [
+    "web-search",
+    "research",
+    "documentation"
+  ],
+  "hooks": "hooks/hooks.json",
+  "mcpServers": ".mcp.json"
+}

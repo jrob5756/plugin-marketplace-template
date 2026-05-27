@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "web",
+  "description": "Web research specialist agent with search and deep research skills",
+  "version": "1.2.0",
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
+  "keywords": [
+    "web-search",
+    "research",
+    "documentation"
+  ],
+  "agents": [
+    "./agents/web-searcher.md"
+  ],
+  "skills": [
+    "./skills/web-research"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}

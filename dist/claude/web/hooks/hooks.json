@@ -1,0 +1,9 @@
+{
+  "SessionStart": [
+    {
+      "type": "command",
+      "command": "echo 'IMPORTANT: Always use the web-searcher:web-searcher subagent (via Task tool) for web research. Never call web-search MCP tools directly, even for medium to complex queries.'",
+      "bash": "echo 'IMPORTANT: Always use the web-searcher:web-searcher subagent (via Task tool) for web research. Never call web-search MCP tools directly, even for medium to complex queries.'"
+    }
+  ]
+}

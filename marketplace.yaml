@@ -1,0 +1,5 @@
+name: my-plugins
+description: "A personal plugin marketplace built from the plugin-marketplace-template."
+version: 0.1.0
+owner:
+  name: Your Name

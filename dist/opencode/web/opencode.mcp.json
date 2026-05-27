@@ -1,0 +1,17 @@
+{
+  "mcp": {
+    "web-search": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "open-websearch@latest"
+      ],
+      "environment": {
+        "MODE": "stdio",
+        "DEFAULT_SEARCH_ENGINE": "duckduckgo",
+        "ALLOWED_SEARCH_ENGINES": "duckduckgo,bing,exa"
+      }
+    }
+  }
+}

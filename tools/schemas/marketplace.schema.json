@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jrob5756/plugins/schemas/marketplace.schema.json",
+  "title": "Marketplace manifest (source)",
+  "description": "Marketplace-level metadata. Plugin entries are derived automatically at build time from every plugins/*/plugin.yaml.",
+  "type": "object",
+  "required": ["name", "owner"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "description": { "type": "string", "maxLength": 1024 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.+-]+)?$" },
+    "owner": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

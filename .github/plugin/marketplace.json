@@ -1,0 +1,22 @@
+{
+  "name": "my-plugins",
+  "owner": {
+    "name": "Your Name"
+  },
+  "metadata": {
+    "description": "A personal plugin marketplace built from the plugin-marketplace-template.",
+    "version": "0.1.0",
+    "pluginRoot": "./dist/copilot"
+  },
+  "plugins": [
+    {
+      "name": "web",
+      "source": "./web",
+      "description": "Web research specialist agent with search and deep research skills",
+      "version": "1.2.0",
+      "skills": [
+        "./skills/web-research"
+      ]
+    }
+  ]
+}

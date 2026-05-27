@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "web-search": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "open-websearch@latest"
+      ],
+      "env": {
+        "MODE": "stdio",
+        "DEFAULT_SEARCH_ENGINE": "duckduckgo",
+        "ALLOWED_SEARCH_ENGINES": "duckduckgo,bing,exa"
+      }
+    }
+  }
+}
