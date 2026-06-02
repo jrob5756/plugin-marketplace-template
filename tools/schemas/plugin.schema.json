@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/jrob5756/plugins/schemas/plugin.schema.json",
+  "$id": "https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/main/tools/schemas/plugin.schema.json",
   "title": "Plugin manifest (source)",
   "description": "Declarative source-of-truth manifest for a plugin. Transpiled into Claude Code and GitHub Copilot plugin formats.",
   "type": "object",

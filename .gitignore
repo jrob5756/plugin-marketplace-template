@@ -5,3 +5,8 @@ __pycache__/
 node_modules/
 *.log
 .DS_Store
+
+# dist/ is intentionally NOT ignored — generated marketplace.json files
+# (.claude-plugin/marketplace.json and .github/plugin/marketplace.json) point
+# at ./dist/<target>/<plugin>, so the dist tree must be committed for the
+# marketplace to resolve plugin URLs. Run `npm run build` to regenerate.

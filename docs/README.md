@@ -2,7 +2,7 @@
 
 This folder documents how to author plugin assets for this repository. Plugins
 live under `plugins/` as source-of-truth and are transpiled to tool-specific
-formats under `dist/` (Claude Code, GitHub Copilot, and eventually OpenCode).
+formats under `dist/` (Claude Code, GitHub Copilot, and OpenCode).
 
 The docs are split along the same axis as the build:
 

@@ -5,7 +5,9 @@ import {
   copyFile,
   dumpYamlFrontmatter,
   ensureDir,
+  orderKeys,
   pathExists,
+  pruneUndefined,
   readJson,
   rmrf,
   stripFrontmatter,
@@ -37,17 +39,6 @@ const SKILL_FIELD_ORDER = [
   'compatibility',
   'metadata',
 ];
-
-function orderKeys(obj, order) {
-  const out = {};
-  for (const key of order) {
-    if (obj[key] !== undefined) out[key] = obj[key];
-  }
-  for (const key of Object.keys(obj)) {
-    if (out[key] === undefined) out[key] = obj[key];
-  }
-  return out;
-}
 
 /**
  * Transpile one plugin into dist/opencode/<name>/.
@@ -229,7 +220,7 @@ async function writeReadme({ plugin, pluginDir, outDir }) {
     lines.push('## Hooks');
     lines.push('');
     lines.push(
-      `> ⚠ This plugin defines hooks (\`hooks/hooks.json\` in the source). OpenCode has no declarative hooks; port them to a JS/TS plugin under \`.opencode/plugins/\`. See [docs/opencode.md](https://github.com/jrob5756/plugins/blob/main/docs/opencode.md#4-plugins).`,
+      `> ⚠ This plugin defines hooks (\`hooks/hooks.json\` in the source). OpenCode has no declarative hooks; port them to a JS/TS plugin under \`.opencode/plugins/\`. See your marketplace's \`docs/opencode.md\` for the JS plugin pattern.`,
     );
     lines.push('');
   }
@@ -242,17 +233,6 @@ async function writeReadme({ plugin, pluginDir, outDir }) {
     lines.push('');
   }
   await writeText(path.join(outDir, 'README.md'), lines.join('\n'));
-}
-
-function pruneUndefined(obj) {
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0) continue;
-    out[k] = v;
-  }
-  return out;
 }
 
 /**

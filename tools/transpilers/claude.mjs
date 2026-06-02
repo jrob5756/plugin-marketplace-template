@@ -5,7 +5,9 @@ import {
   copyFile,
   dumpYamlFrontmatter,
   ensureDir,
+  orderKeys,
   pathExists,
+  pruneUndefined,
   rmrf,
   stripFrontmatter,
   writeJson,
@@ -46,17 +48,6 @@ const MANIFEST_FIELD_ORDER = [
   'mcpServers',
 ];
 
-function orderKeys(obj, order) {
-  const out = {};
-  for (const key of order) {
-    if (obj[key] !== undefined) out[key] = obj[key];
-  }
-  for (const key of Object.keys(obj)) {
-    if (out[key] === undefined) out[key] = obj[key];
-  }
-  return out;
-}
-
 /**
  * Transpile one plugin into dist/claude/<name>/.
  */
@@ -75,6 +66,7 @@ async function writeManifest({ plugin, outDir }) {
   const manifest = {
     $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
     name: plugin.name,
+    displayName: plugin.displayName,
     description: plugin.description,
     version: plugin.version,
     author: plugin.author,
@@ -156,17 +148,6 @@ async function copySharedAssets({ plugin, pluginDir, outDir }) {
       skip: ['__pycache__', '.pytest_cache'],
     });
   }
-}
-
-function pruneUndefined(obj) {
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0) continue;
-    out[k] = v;
-  }
-  return out;
 }
 
 /**

@@ -104,3 +104,42 @@ export function stripFrontmatter(text) {
 export function stableStringify(obj) {
   return JSON.stringify(obj, null, 2) + '\n';
 }
+
+/**
+ * Drop `undefined`, empty arrays, and empty objects from a shallow object.
+ * Used by all transpilers when assembling manifest / frontmatter objects to
+ * avoid emitting `key: null`, `key: []`, `key: {}` artifacts.
+ */
+export function pruneUndefined(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (
+      typeof v === 'object' &&
+      v !== null &&
+      !Array.isArray(v) &&
+      Object.keys(v).length === 0
+    ) {
+      continue;
+    }
+    out[k] = v;
+  }
+  return out;
+}
+
+/**
+ * Return a new object with keys ordered first by `order` (if present), then
+ * by insertion order of remaining keys. Used to keep manifest field order
+ * stable across builds.
+ */
+export function orderKeys(obj, order) {
+  const out = {};
+  for (const key of order) {
+    if (obj[key] !== undefined) out[key] = obj[key];
+  }
+  for (const key of Object.keys(obj)) {
+    if (out[key] === undefined) out[key] = obj[key];
+  }
+  return out;
+}

@@ -47,6 +47,12 @@ You should see the bundled sample plugin (`web`) transpiled into
 regenerated `marketplace.json` files at `.claude-plugin/marketplace.json` and
 `.github/plugin/marketplace.json`.
 
+> **`dist/` is intentionally committed.** The generated `marketplace.json`
+> files point at `./dist/<target>/<plugin>` as the plugin source, so tools
+> resolving the marketplace URL must be able to fetch those paths from the
+> remote git tree. Run `npm run build` after any change and commit both
+> `dist/` and the marketplace files together.
+
 ### 3. Make it yours
 
 Edit `marketplace.yaml`:

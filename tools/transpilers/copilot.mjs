@@ -5,7 +5,9 @@ import {
   copyFile,
   dumpYamlFrontmatter,
   ensureDir,
+  orderKeys,
   pathExists,
+  pruneUndefined,
   rmrf,
   stripFrontmatter,
   writeJson,
@@ -49,17 +51,6 @@ const MANIFEST_FIELD_ORDER = [
   'hooks',
   'mcpServers',
 ];
-
-function orderKeys(obj, order) {
-  const out = {};
-  for (const key of order) {
-    if (obj[key] !== undefined) out[key] = obj[key];
-  }
-  for (const key of Object.keys(obj)) {
-    if (out[key] === undefined) out[key] = obj[key];
-  }
-  return out;
-}
 
 /**
  * Transpile one plugin into dist/copilot/<name>/.
@@ -158,17 +149,6 @@ async function copySharedAssets({ plugin, pluginDir, outDir }) {
       skip: ['__pycache__', '.pytest_cache'],
     });
   }
-}
-
-function pruneUndefined(obj) {
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0) continue;
-    out[k] = v;
-  }
-  return out;
 }
 
 /**
