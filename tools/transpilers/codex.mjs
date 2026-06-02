@@ -50,8 +50,6 @@ const INTERFACE_FIELD_ORDER = [
   'screenshots',
 ];
 
-const AGENT_FIELD_ORDER = ['name', 'description', 'model', 'tools'];
-
 const SKILL_FIELD_ORDER = ['name', 'description', 'argument-hint'];
 
 /**
@@ -59,14 +57,23 @@ const SKILL_FIELD_ORDER = ['name', 'description', 'argument-hint'];
  *
  * Codex CLI (openai/codex) ships its own .codex-plugin/plugin.json schema and
  * also reads .claude-plugin/plugin.json as a fallback. We emit the native
- * Codex layout, with skills + hooks + mcpServers in the formats Codex parses.
+ * Codex layout for the components Codex's plugin loader actually consumes:
+ * skills, hooks, mcpServers, and the `interface` marketplace-display block.
+ *
+ * Codex does NOT load agents from plugin manifests. Subagents in Codex live
+ * as TOML files under `.codex/agents/` (project) or `$CODEX_HOME/agents/`
+ * (user) and are installed separately. We do not emit agents into this
+ * bundle — authors with agents should also ship the dist/claude/ bundle
+ * (Codex picks up agents from `.claude/agents/*.md` via its migration code:
+ * `openai/codex:codex-rs/external-agent-migration/src/lib.rs`).
  *
  * Notable incompatibility with Claude / Copilot: Codex does NOT honor a
  * `${CLAUDE_PLUGIN_ROOT}` / `${CODEX_PLUGIN_ROOT}` env var inside plugin MCP
  * server commands. Plugin authors targeting Codex must either install their
  * commands on `PATH` or use absolute paths in `command`. The transpiler emits
- * a `> Codex note:` block in the generated plugin README when it detects a
- * plugin-rooted path expression in any MCP command.
+ * a console warning when it detects a plugin-rooted path expression.
+ *
+ * See docs/codex.md for the format reference.
  */
 export async function transpile({ plugin, pluginDir, outRoot }) {
   const outDir = path.join(outRoot, TARGET, plugin.name);
@@ -74,7 +81,7 @@ export async function transpile({ plugin, pluginDir, outRoot }) {
   await ensureDir(outDir);
 
   await writeManifest({ plugin, outDir });
-  await writeAgents({ plugin, pluginDir, outDir });
+  maybeWarnAgents({ plugin });
   await writeSkills({ plugin, pluginDir, outDir });
   await copySharedAssets({ plugin, pluginDir, outDir });
 }
@@ -124,31 +131,15 @@ async function writeManifest({ plugin, outDir }) {
   await writeJson(path.join(outDir, '.codex-plugin', 'plugin.json'), ordered);
 }
 
-async function writeAgents({ plugin, pluginDir, outDir }) {
-  // Codex subagents are TOML files under .codex/agents/. They are
-  // installed by the user-level config and migrated automatically from
-  // Claude's .claude/agents/*.md (see openai/codex:codex-rs/external-agent-migration).
-  // For now we keep the source markdown body alongside the manifest so users
-  // pointing Codex at this plugin via the Claude compatibility shim still
-  // see a working agent. A TOML emitter can be added once the migration
-  // format stabilises.
-  for (const agent of plugin.agents ?? []) {
-    const srcPath = safeResolve(pluginDir, agent.path);
-    const body = await fs.readFile(srcPath, 'utf8');
-    assertNoFrontmatter(srcPath, body);
-
-    const codex = agent.codex ?? {};
-    const fm = pruneUndefined({
-      name: agent.name,
-      description: agent.description,
-      ...codex,
-    });
-
-    const ordered = orderKeys(fm, AGENT_FIELD_ORDER);
-    const frontmatter = dumpYamlFrontmatter(ordered, { quoteStrings: 'double' });
-    const outFile = path.join(outDir, 'agents', `${agent.name}.md`);
-    await writeText(outFile, frontmatter + '\n' + body.trimStart());
-  }
+function maybeWarnAgents({ plugin }) {
+  if (!plugin.agents?.length) return;
+  console.warn(
+    `  ⚠ ${plugin.name}: ${plugin.agents.length} agent(s) defined but not ` +
+      `emitted in the Codex bundle. Codex loads subagents from ` +
+      `.codex/agents/*.toml or $CODEX_HOME/agents/, not from plugin manifests. ` +
+      `Install agents via the dist/claude/ bundle (Codex auto-migrates ` +
+      `.claude/agents/*.md to TOML) or hand-author .codex/agents/<name>.toml.`,
+  );
 }
 
 async function writeSkills({ plugin, pluginDir, outDir }) {

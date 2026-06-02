@@ -18,11 +18,3 @@
     }
   }
 }
-
-=== agents/echo.md ===
----
-name: echo
-description: An echo agent that uses the inline MCP server.
----
-
-Echo agent body.

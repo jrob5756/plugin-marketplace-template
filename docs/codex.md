@@ -87,13 +87,25 @@ verbatim.
 
 ## Agents
 
-> Subagents in Codex are **TOML files** under `.codex/agents/`, not markdown.
-> The auto-migration code in `codex-rs/external-agent-migration/` renames
-> Claude `.claude/agents/*.md` into the TOML form on first launch.
+> Subagents in Codex are **TOML files** under `.codex/agents/` (project) or
+> `$CODEX_HOME/agents/` (user), not part of a plugin manifest at all. The
+> auto-migration code in `codex-rs/external-agent-migration/` renames Claude
+> `.claude/agents/*.md` into the TOML form on first launch.
 
-This template currently emits the markdown body alongside the manifest so the
-Claude compatibility shim works. A native TOML emitter is on the roadmap once
-the migration shape stabilizes upstream.
+This template's Codex bundle (`dist/codex/<plugin>/`) **does not emit
+agents** — Codex's plugin loader wouldn't read them from a plugin manifest
+anyway. The build emits a warning at every codex transpile that lists how
+many agents were skipped.
+
+Two ways to ship agents to Codex users:
+
+1. **Easy**: also publish the Claude bundle (`dist/claude/<plugin>/`). Codex
+   reads `.claude-plugin/plugin.json` as a fallback and its
+   `external-agent-migration` code converts `.claude/agents/*.md` into the
+   Codex TOML format on first launch.
+2. **Native**: hand-author `.codex/agents/<name>.toml` and install separately.
+   A native TOML emitter for this template is on the roadmap once the
+   migration shape stabilises upstream.
 
 ## MCP servers
 

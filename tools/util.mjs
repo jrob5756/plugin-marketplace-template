@@ -4,12 +4,20 @@ import yaml from 'js-yaml';
 
 export async function readYaml(filePath) {
   const text = await fs.readFile(filePath, 'utf8');
-  return yaml.load(text);
+  try {
+    return yaml.load(text);
+  } catch (err) {
+    throw new Error(`${filePath}: invalid YAML — ${err.message}`);
+  }
 }
 
 export async function readJson(filePath) {
   const text = await fs.readFile(filePath, 'utf8');
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`${filePath}: invalid JSON — ${err.message}`);
+  }
 }
 
 export async function writeJson(filePath, value) {

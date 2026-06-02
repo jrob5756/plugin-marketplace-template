@@ -40,10 +40,16 @@ jobs:
         id: diff
         run: |
           set -e
-          if [ -n "$(git status --porcelain dist .claude-plugin/marketplace.json .github/plugin/marketplace.json)" ]; then
+          GENERATED=(
+            dist
+            .claude-plugin/marketplace.json
+            .github/plugin/marketplace.json
+            .agents/plugins/marketplace.json
+          )
+          if [ -n "$(git status --porcelain "${GENERATED[@]}")" ]; then
             echo "::error::Generated files are stale. Run 'npm run build' and commit the result."
             echo "--- Diff ---"
-            git --no-pager diff -- dist .claude-plugin/marketplace.json .github/plugin/marketplace.json
+            git --no-pager diff -- "${GENERATED[@]}"
             exit 1
           fi
           echo "OK — generated files match sources."
@@ -57,3 +63,4 @@ jobs:
             dist
             .claude-plugin/marketplace.json
             .github/plugin/marketplace.json
+            .agents/plugins/marketplace.json
