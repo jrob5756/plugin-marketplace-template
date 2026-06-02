@@ -1,9 +1,9 @@
 # Plugin Marketplace Workspace
 
 A multi-target plugin marketplace for **Claude Code**, **GitHub Copilot**
-(VS Code + Copilot CLI), and **OpenCode**. Plugins are authored once in a
-tool-agnostic source format, then transpiled into each tool's native plugin
-format.
+(VS Code + Copilot CLI), **OpenCode**, and **OpenAI Codex CLI**. Plugins are
+authored once in a tool-agnostic source format, then transpiled into each
+tool's native plugin format.
 
 ```
 plugins/<name>/         ← single source of truth (edit here)
@@ -13,7 +13,7 @@ dist/copilot/<name>/    ← Copilot plugin (generated)
 dist/opencode/<name>/   ← OpenCode bundle (generated)
 ```
 
-Adding a fourth target is a drop-in transpiler — see
+Adding a fifth target is a drop-in transpiler — see
 [Adding a transpile target](#adding-a-transpile-target).
 
 ---
@@ -70,7 +70,7 @@ marketplace.yaml                       ← single source of marketplace metadata
                                         (OpenCode has no marketplace.json — see dist/opencode/<name>/README.md)
 package.json                           ← npm run build / validate / clean
 tools/                                 ← build tool + schemas + transpilers
-docs/                                  ← authoring guides (claude.md, copilot.md, opencode.md, etc.)
+docs/                                  ← authoring guides (claude.md, codex.md, copilot.md, opencode.md, etc.)
 ```
 
 ---
@@ -81,7 +81,7 @@ docs/                                  ← authoring guides (claude.md, copilot.
 |---|---|
 | `npm run build` | Validate everything, then transpile **all plugins × all targets** and regenerate both marketplace.json files. |
 | `npm run build -- --plugin=<name>` | Build just one plugin (both targets). Skips marketplace regeneration. |
-| `npm run build -- --target=<name>` | Build only one target (`claude`, `copilot`, or `opencode`). |
+| `npm run build -- --target=<name>` | Build only one target (`claude`, `codex`, `copilot`, or `opencode`). |
 | `npm run validate` | JSON-schema-validate `plugin.yaml` files + `marketplace.yaml` without writing anything. |
 | `npm run clean` | Wipe `dist/`. |
 
@@ -92,8 +92,8 @@ First-time setup: `npm install`.
 ## `plugin.yaml` schema
 
 The full schema lives at `tools/schemas/plugin.schema.json`. Only `name` is
-strictly required. Per-target fields go under `claude:`, `copilot:`, or
-`opencode:` blocks; shared fields sit at the component root.
+strictly required. Per-target fields go under `claude:`, `codex:`, `copilot:`,
+or `opencode:` blocks; shared fields sit at the component root.
 
 ### Top-level
 
@@ -297,16 +297,23 @@ generation for that target.
 
 ## Authoring guides (deeper reading)
 
+The authoritative schema reference is [`docs/schema.md`](docs/schema.md).
+
 Tool-agnostic best practices for each artifact type:
 
 - [`docs/agents.md`](docs/agents.md) — agent descriptions, tool restrictions,
   model selection
 - [`docs/skills.md`](docs/skills.md) — skill triggers, progressive disclosure,
   bundled resources
+- [`docs/hooks.md`](docs/hooks.md) — hook events, I/O contract, security,
+  performance, conditional activation
+- [`docs/mcp-servers.md`](docs/mcp-servers.md) — bundling MCP servers in
+  plugins (protocol itself: see [modelcontextprotocol.io](https://modelcontextprotocol.io/))
 
 Tool-specific format references:
 
 - [`docs/claude.md`](docs/claude.md) — Claude Code plugin format
+- [`docs/codex.md`](docs/codex.md) — OpenAI Codex CLI plugin format
 - [`docs/copilot.md`](docs/copilot.md) — Copilot plugin format
 - [`docs/opencode.md`](docs/opencode.md) — OpenCode project format
 

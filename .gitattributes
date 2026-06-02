@@ -1,0 +1,16 @@
+# Template-sync protections for repos created from this template.
+#
+# Paths marked `merge=ours` keep the LOCAL version when merging in upstream
+# template changes — so a downstream repo's own plugins and marketplace
+# metadata are never clobbered by `git merge template/main`.
+#
+# Requires a one-time setup in each clone:
+#
+#     git config merge.ours.driver true
+#
+# See the "Keeping your repo in sync with the template" section of README.md
+# for the full workflow.
+
+plugins/**           merge=ours
+marketplace.yaml     merge=ours
+dist/**              merge=ours
