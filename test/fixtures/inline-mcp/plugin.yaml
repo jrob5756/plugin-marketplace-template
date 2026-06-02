@@ -1,0 +1,15 @@
+name: inline-mcp
+version: 0.1.0
+description: "Fixture: mcpServers declared inline rather than via path."
+
+mcpServers:
+  mcpServers:
+    echo-server:
+      type: stdio
+      command: echo
+      args: ["hello"]
+
+agents:
+  - name: echo
+    path: ./agents/echo.md
+    description: "An echo agent that uses the inline MCP server."

@@ -1,0 +1,16 @@
+{
+  "name": "web",
+  "version": "1.2.0",
+  "description": "Web research specialist agent with search and deep research skills",
+  "keywords": [
+    "web-search",
+    "research",
+    "documentation"
+  ],
+  "interface": {
+    "developerName": "Your Name"
+  },
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json"
+}

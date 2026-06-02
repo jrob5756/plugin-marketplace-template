@@ -1,0 +1,12 @@
+name: hooks-targets
+version: 0.1.0
+description: "Fixture: hooks scoped to specific targets, suppressing OpenCode warning."
+
+hooks:
+  path: ./hooks/hooks.json
+  targets: [claude, copilot]
+
+agents:
+  - name: hooked
+    path: ./agents/hooked.md
+    description: "An agent in a plugin that ships hooks scoped to claude+copilot only."

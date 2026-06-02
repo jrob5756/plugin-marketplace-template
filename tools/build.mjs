@@ -14,6 +14,7 @@ import {
   writeJson,
 } from './util.mjs';
 import * as claude from './transpilers/claude.mjs';
+import * as codex from './transpilers/codex.mjs';
 import * as copilot from './transpilers/copilot.mjs';
 import * as opencode from './transpilers/opencode.mjs';
 
@@ -27,6 +28,7 @@ const MARKETPLACE_SCHEMA = path.join(__dirname, 'schemas', 'marketplace.schema.j
 
 const TARGETS = {
   claude: claude,
+  codex: codex,
   copilot: copilot,
   opencode: opencode,
 };
@@ -36,46 +38,68 @@ const TARGETS = {
 // per-bundle README.md files from inside their transpiler instead.
 const MARKETPLACE_FILES = {
   claude: ['.claude-plugin', 'marketplace.json'],
+  codex: ['.agents', 'plugins', 'marketplace.json'],
   copilot: ['.github', 'plugin', 'marketplace.json'],
 };
 
-function parseArgs(argv) {
-  const args = { validateOnly: false, clean: false, plugin: null, target: null };
+export function parseArgs(argv, { targets = TARGETS, exit = process.exit, log = console } = {}) {
+  const args = {
+    validateOnly: false,
+    clean: false,
+    plugin: null,
+    target: null,
+    allowWarnings: false,
+  };
   for (const arg of argv) {
     if (arg === '--validate-only' || arg === '--validate') args.validateOnly = true;
     else if (arg === '--clean') args.clean = true;
+    else if (arg === '--allow-warnings') args.allowWarnings = true;
     else if (arg.startsWith('--plugin=')) args.plugin = arg.slice('--plugin='.length);
     else if (arg.startsWith('--target=')) args.target = arg.slice('--target='.length);
     else if (arg === '--help' || arg === '-h') {
-      printUsage();
-      process.exit(0);
+      printUsage(targets, log);
+      exit(0);
+      return args;
     } else {
-      console.error(`Unknown argument: ${arg}`);
-      printUsage();
-      process.exit(1);
+      log.error(`Unknown argument: ${arg}`);
+      printUsage(targets, log);
+      exit(1);
+      return args;
     }
   }
-  if (args.target && !TARGETS[args.target]) {
-    console.error(`Unknown target: ${args.target}. Valid: ${Object.keys(TARGETS).join(', ')}`);
-    process.exit(1);
+  if (args.target && !targets[args.target]) {
+    log.error(`Unknown target: ${args.target}. Valid: ${Object.keys(targets).join(', ')}`);
+    exit(1);
+    return args;
   }
   return args;
 }
 
-function printUsage() {
-  console.log(`Usage: node tools/build.mjs [options]
+function printUsage(targets = TARGETS, log = console) {
+  log.log(`Usage: node tools/build.mjs [options]
 
 Options:
-  --target=<name>      Build only this target (${Object.keys(TARGETS).join(' | ')})
+  --target=<name>      Build only this target (${Object.keys(targets).join(' | ')})
   --plugin=<name>      Build only this plugin
   --validate-only      Validate plugin.yaml files without writing anything
   --clean              Remove dist/ before building (or alone to just clean)
+  --allow-warnings     Exit 0 even if transpilers emitted warnings (default: exit 2)
   -h, --help           Show this message
 `);
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+
+  // Count transpiler warnings so we can fail the build on stale/lossy
+  // emissions (e.g. OpenCode hooks dropped, Codex agents skipped). Tests
+  // don't go through main() so this doesn't affect vitest output.
+  let warningCount = 0;
+  const originalWarn = console.warn;
+  console.warn = (...a) => {
+    warningCount++;
+    originalWarn(...a);
+  };
 
   if (args.clean && !args.plugin && !args.target) {
     await rmrf(DIST_DIR);
@@ -186,6 +210,16 @@ async function main() {
       await writeJson(outFile, marketplaceOut);
       console.log(`  ✓ ${path.relative(REPO_ROOT, outFile)}`);
     }
+  }
+
+  if (warningCount > 0 && !args.allowWarnings) {
+    console.error(
+      `\n✗ ${warningCount} warning(s). Build did not exit cleanly. ` +
+        `Either fix the underlying issues (e.g. add \`targets: [claude, copilot]\` ` +
+        `to hooks declarations to silence OpenCode warnings, or remove agents from ` +
+        `plugins that ship only to Codex) or pass --allow-warnings to ignore.`,
+    );
+    process.exit(2);
   }
 
   console.log(`\n✓ Build complete.`);

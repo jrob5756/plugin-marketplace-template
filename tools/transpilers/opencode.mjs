@@ -1,14 +1,18 @@
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import {
+  assertNoFrontmatter,
   copyDir,
-  copyFile,
   dumpYamlFrontmatter,
   ensureDir,
+  normalizeHooks,
+  normalizeMcpServers,
+  orderKeys,
   pathExists,
+  pruneUndefined,
   readJson,
   rmrf,
-  stripFrontmatter,
+  safeResolve,
   writeJson,
   writeText,
 } from '../util.mjs';
@@ -38,17 +42,6 @@ const SKILL_FIELD_ORDER = [
   'metadata',
 ];
 
-function orderKeys(obj, order) {
-  const out = {};
-  for (const key of order) {
-    if (obj[key] !== undefined) out[key] = obj[key];
-  }
-  for (const key of Object.keys(obj)) {
-    if (out[key] === undefined) out[key] = obj[key];
-  }
-  return out;
-}
-
 /**
  * Transpile one plugin into dist/opencode/<name>/.
  *
@@ -72,31 +65,15 @@ export async function transpile({ plugin, pluginDir, outRoot }) {
 
 async function writeAgents({ plugin, pluginDir, outDir }) {
   for (const agent of plugin.agents ?? []) {
-    const srcPath = path.join(pluginDir, agent.path);
-    const body = stripFrontmatter(await fs.readFile(srcPath, 'utf8'));
+    if (agent.targets && !agent.targets.includes(TARGET)) continue;
+    const srcPath = safeResolve(pluginDir, agent.path);
+    const body = await fs.readFile(srcPath, 'utf8');
+    assertNoFrontmatter(srcPath, body);
 
-    const opencode = agent.opencode ?? {};
     const fm = pruneUndefined({
       description: agent.description,
-      ...opencode,
+      ...(agent.opencode ?? {}),
     });
-
-    // If a Claude agent is gated `user-invocable: false` for Copilot and has
-    // no explicit opencode.mode, default it to "subagent" since the intent
-    // is the same: hide from the user's primary picker.
-    if (
-      fm.mode === undefined &&
-      agent.copilot?.['user-invocable'] === false
-    ) {
-      fm.mode = 'subagent';
-    }
-
-    // Carry the Claude color over to OpenCode when the author didn't specify
-    // one. Both fields accept the same named-color vocabulary for the eight
-    // standard hues, and OpenCode silently ignores unknown values.
-    if (fm.color === undefined && agent.claude?.color) {
-      fm.color = agent.claude.color;
-    }
 
     const ordered = orderKeys(fm, AGENT_FIELD_ORDER);
     const frontmatter = dumpYamlFrontmatter(ordered, { quoteStrings: 'double' });
@@ -107,9 +84,10 @@ async function writeAgents({ plugin, pluginDir, outDir }) {
 
 async function writeSkills({ plugin, pluginDir, outDir }) {
   for (const skill of plugin.skills ?? []) {
-    const srcDir = path.join(pluginDir, skill.path);
+    const srcDir = safeResolve(pluginDir, skill.path);
     const skillSrc = path.join(srcDir, 'SKILL.md');
-    const body = stripFrontmatter(await fs.readFile(skillSrc, 'utf8'));
+    const body = await fs.readFile(skillSrc, 'utf8');
+    assertNoFrontmatter(skillSrc, body);
 
     const fm = pruneUndefined({
       name: skill.name,
@@ -134,8 +112,11 @@ async function writeSkills({ plugin, pluginDir, outDir }) {
  * `opencode.mcp.json` that the user merges into their own opencode.json.
  */
 async function writeMcp({ plugin, pluginDir, outDir }) {
-  if (!plugin.mcpServers) return;
-  const src = await readJson(path.join(pluginDir, plugin.mcpServers));
+  const declared = normalizeMcpServers(plugin.mcpServers);
+  if (!declared) return;
+  const src = declared.path
+    ? await readJson(safeResolve(pluginDir, declared.path))
+    : declared.inline;
   const servers = src.mcpServers ?? {};
   if (Object.keys(servers).length === 0) return;
 
@@ -166,7 +147,7 @@ function convertMcpEntry(entry) {
 }
 
 async function writeScripts({ plugin, pluginDir, outDir }) {
-  const scriptsDir = path.join(pluginDir, 'scripts');
+  const scriptsDir = safeResolve(pluginDir, './scripts');
   if (!(await pathExists(scriptsDir))) return;
   // Scripts live inside `.opencode/scripts/` so the whole `.opencode/` tree is
   // self-contained and can be symlinked into a project as a unit.
@@ -176,17 +157,22 @@ async function writeScripts({ plugin, pluginDir, outDir }) {
 }
 
 async function maybeWarnHooks({ plugin }) {
-  if (!plugin.hooks) return;
+  const hooks = normalizeHooks(plugin.hooks);
+  if (!hooks) return;
+  // Authors who explicitly scope hooks to other targets opt out of the warning.
+  if (hooks.targets && !hooks.targets.includes(TARGET)) return;
   console.warn(
     `  ⚠ ${plugin.name}: hooks are not transpiled to OpenCode in this build. ` +
       `OpenCode has no declarative hooks file — express the same behavior as a ` +
-      `JS/TS plugin under .opencode/plugins/. See docs/opencode.md#4-plugins.`,
+      `JS/TS plugin under .opencode/plugins/, or add ` +
+      `\`targets: [claude, copilot]\` to the hooks declaration in plugin.yaml ` +
+      `to silence this warning.`,
   );
 }
 
 async function writeReadme({ plugin, pluginDir, outDir }) {
   const hasMcp =
-    plugin.mcpServers &&
+    plugin.mcpServers !== undefined &&
     (await pathExists(path.join(outDir, 'opencode.mcp.json')));
   const hasScripts = await pathExists(path.join(outDir, '.opencode', 'scripts'));
 
@@ -225,11 +211,12 @@ async function writeReadme({ plugin, pluginDir, outDir }) {
     lines.push('```');
     lines.push('');
   }
-  if (plugin.hooks) {
+  const hooks = normalizeHooks(plugin.hooks);
+  if (hooks && (!hooks.targets || hooks.targets.includes(TARGET))) {
     lines.push('## Hooks');
     lines.push('');
     lines.push(
-      `> ⚠ This plugin defines hooks (\`hooks/hooks.json\` in the source). OpenCode has no declarative hooks; port them to a JS/TS plugin under \`.opencode/plugins/\`. See [docs/opencode.md](https://github.com/jrob5756/plugins/blob/main/docs/opencode.md#4-plugins).`,
+      `> ⚠ This plugin defines hooks. OpenCode has no declarative hooks; port them to a JS/TS plugin under \`.opencode/plugins/\`. See your marketplace's \`docs/opencode.md\` for the JS plugin pattern, or add \`targets: [claude, copilot]\` to the hooks declaration in plugin.yaml to opt out of OpenCode-bound hook emission.`,
     );
     lines.push('');
   }
@@ -242,17 +229,6 @@ async function writeReadme({ plugin, pluginDir, outDir }) {
     lines.push('');
   }
   await writeText(path.join(outDir, 'README.md'), lines.join('\n'));
-}
-
-function pruneUndefined(obj) {
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0) continue;
-    out[k] = v;
-  }
-  return out;
 }
 
 /**

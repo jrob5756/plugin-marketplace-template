@@ -1,0 +1,66 @@
+name: Check dist/
+
+# Pattern adapted from actions/typescript-action: rebuild dist/ from scratch on
+# every PR and fail if the diff is non-empty. If it fails, upload the correct
+# dist/ as a workflow artifact so the contributor can download and commit it
+# without needing to reproduce the build locally.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: check-dist-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-dist:
+    name: Verify dist/ and marketplace.json are not stale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+
+      - name: Remove dist/
+        run: rm -rf dist
+
+      - name: Rebuild from sources
+        run: npm run build
+
+      - name: Compare to committed dist/ and marketplace files
+        id: diff
+        run: |
+          set -e
+          GENERATED=(
+            dist
+            .claude-plugin/marketplace.json
+            .github/plugin/marketplace.json
+            .agents/plugins/marketplace.json
+          )
+          if [ -n "$(git status --porcelain "${GENERATED[@]}")" ]; then
+            echo "::error::Generated files are stale. Run 'npm run build' and commit the result."
+            echo "--- Diff ---"
+            git --no-pager diff -- "${GENERATED[@]}"
+            exit 1
+          fi
+          echo "OK — generated files match sources."
+
+      - name: Upload regenerated dist/ on failure
+        if: ${{ failure() && steps.diff.outcome == 'failure' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: regenerated-dist
+          path: |
+            dist
+            .claude-plugin/marketplace.json
+            .github/plugin/marketplace.json
+            .agents/plugins/marketplace.json

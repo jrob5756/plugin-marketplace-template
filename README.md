@@ -1,7 +1,8 @@
 # Plugin Marketplace Template
 
 > Build a plugin marketplace for **Claude Code**, **GitHub Copilot**
-> (VS Code + Copilot CLI), and **OpenCode** from a single tool-agnostic source.
+> (VS Code + Copilot CLI), **OpenCode**, and **OpenAI Codex CLI** from a
+> single tool-agnostic source.
 
 Plugins are authored once as a declarative `plugin.yaml` manifest plus body-only
 markdown files. A small Node build tool transpiles each plugin into every
@@ -11,11 +12,12 @@ target's native format and regenerates the per-target marketplace registries.
 plugins/<name>/         ← single source of truth (edit here)
   ↓ npm run build
 dist/claude/<name>/     ← Claude Code plugin (generated)
+dist/codex/<name>/      ← OpenAI Codex CLI plugin (generated)
 dist/copilot/<name>/    ← Copilot plugin (generated)
 dist/opencode/<name>/   ← OpenCode bundle (generated)
 ```
 
-Adding a fourth target is a drop-in transpiler — see
+Adding a fifth target is a drop-in transpiler — see
 [Adding a transpile target](AGENTS.md#adding-a-transpile-target) in `AGENTS.md`.
 
 ---
@@ -46,6 +48,12 @@ You should see the bundled sample plugin (`web`) transpiled into
 `dist/claude/web/`, `dist/copilot/web/`, and `dist/opencode/web/`, plus
 regenerated `marketplace.json` files at `.claude-plugin/marketplace.json` and
 `.github/plugin/marketplace.json`.
+
+> **`dist/` is intentionally committed.** The generated `marketplace.json`
+> files point at `./dist/<target>/<plugin>` as the plugin source, so tools
+> resolving the marketplace URL must be able to fetch those paths from the
+> remote git tree. Run `npm run build` after any change and commit both
+> `dist/` and the marketplace files together.
 
 ### 3. Make it yours
 
@@ -125,6 +133,7 @@ support, and conventions.
 
 ## Documentation
 
+The authoritative schema reference is [`docs/schema.md`](docs/schema.md).
 Tool-agnostic authoring guides:
 
 - [`docs/agents.md`](docs/agents.md) — agent design, descriptions, tool restrictions
@@ -135,6 +144,7 @@ Tool-agnostic authoring guides:
 Tool-specific format references:
 
 - [`docs/claude.md`](docs/claude.md) — Claude Code plugin format
+- [`docs/codex.md`](docs/codex.md) — OpenAI Codex CLI plugin format
 - [`docs/copilot.md`](docs/copilot.md) — Copilot plugin format
 - [`docs/opencode.md`](docs/opencode.md) — OpenCode project format
 

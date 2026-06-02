@@ -1,0 +1,14 @@
+name: claude-tools
+version: 0.1.0
+description: "Fixture: claude tools array → CSV join + disallowedTools + copilot description with apostrophe."
+
+agents:
+  - name: dev
+    path: ./agents/dev.md
+    description: "Helper that's tool-restricted."
+    claude:
+      tools: [Read, Edit, Grep]
+      disallowedTools: [Bash, Write]
+      color: blue
+    copilot:
+      tools: [read, edit, search, 'github/*', 'web-search/*']
