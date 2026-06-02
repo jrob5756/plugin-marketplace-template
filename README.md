@@ -131,6 +131,7 @@ support, and conventions.
 
 ## Documentation
 
+The authoritative schema reference is [`docs/schema.md`](docs/schema.md).
 Tool-agnostic authoring guides:
 
 - [`docs/agents.md`](docs/agents.md) — agent design, descriptions, tool restrictions

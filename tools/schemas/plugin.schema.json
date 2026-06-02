@@ -4,7 +4,7 @@
   "title": "Plugin manifest (source)",
   "description": "Declarative source-of-truth manifest for a plugin. Transpiled into Claude Code and GitHub Copilot plugin formats.",
   "type": "object",
-  "required": ["name"],
+  "required": ["name", "version", "description"],
   "additionalProperties": false,
   "properties": {
     "name": {
@@ -34,12 +34,54 @@
       "uniqueItems": true
     },
     "mcpServers": {
-      "type": "string",
-      "description": "Path to the plugin's .mcp.json file, relative to the plugin root."
+      "description": "MCP server definitions. Either a relative path to a `.mcp.json` file (preserved as an external file in Claude/Copilot output) OR an inline object using the same `{ mcpServers: { name: {...} } }` schema as Claude's .mcp.json. Inline is convenient for tiny plugins; path is preferred when the same config is consumed by external tooling.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\./",
+          "description": "Relative path to .mcp.json file, e.g. './.mcp.json'."
+        },
+        {
+          "type": "object",
+          "required": ["mcpServers"],
+          "additionalProperties": false,
+          "properties": {
+            "mcpServers": {
+              "type": "object",
+              "additionalProperties": { "type": "object" }
+            }
+          }
+        }
+      ]
     },
     "hooks": {
-      "type": "string",
-      "description": "Path to the plugin's hooks.json file, relative to the plugin root."
+      "description": "Hook definitions. Either a relative path to a hooks.json file OR an inline object. NOTE: hooks are NOT portable to OpenCode (which has no declarative hooks format). Add `targets: [claude, copilot]` to make the target restriction explicit and silence the OpenCode warning.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\./",
+          "description": "Relative path to hooks.json file, e.g. './hooks/hooks.json'."
+        },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Inline hooks object using the Claude Code hooks schema (event name -> array of matcher+hooks entries)."
+        },
+        {
+          "type": "object",
+          "required": ["path"],
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string", "pattern": "^\\./" },
+            "targets": {
+              "type": "array",
+              "items": { "enum": ["claude", "copilot", "opencode", "codex"] },
+              "uniqueItems": true,
+              "description": "Restrict hook emission to specific targets. Defaults to all targets that support declarative hooks."
+            }
+          }
+        }
+      ]
     },
     "agents": {
       "type": "array",
@@ -69,7 +111,8 @@
     },
     "agentClaude": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
+      "description": "Claude Code agent frontmatter. Strict-keyed fields are validated; unknown fields pass through verbatim so authors can use newly-released Claude features without waiting for a schema update.",
       "properties": {
         "model": { "type": "string" },
         "effort": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
@@ -95,7 +138,8 @@
     },
     "agentCopilot": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
+      "description": "GitHub Copilot agent frontmatter. Strict-keyed fields are validated; unknown fields pass through.",
       "properties": {
         "model": {
           "oneOf": [
@@ -135,14 +179,14 @@
     },
     "skillClaude": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "disable-model-invocation": { "type": "boolean" }
       }
     },
     "skillCopilot": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "user-invocable": { "type": "boolean" },
         "disable-model-invocation": { "type": "boolean" },
@@ -151,8 +195,8 @@
     },
     "agentOpencode": {
       "type": "object",
-      "additionalProperties": false,
-      "description": "OpenCode-specific overrides. See docs/opencode.md.",
+      "additionalProperties": true,
+      "description": "OpenCode-specific overrides. Strict-keyed fields are validated; unknown fields pass through. See docs/opencode.md.",
       "properties": {
         "mode": { "type": "string", "enum": ["primary", "subagent", "all"] },
         "model": { "type": "string", "description": "provider/model-id (e.g. anthropic/claude-sonnet-4-5)." },
@@ -172,8 +216,8 @@
     },
     "skillOpencode": {
       "type": "object",
-      "additionalProperties": false,
-      "description": "OpenCode-specific skill overrides. See docs/opencode.md.",
+      "additionalProperties": true,
+      "description": "OpenCode-specific skill overrides. Strict-keyed fields are validated; unknown fields pass through. See docs/opencode.md.",
       "properties": {
         "license": { "type": "string" },
         "compatibility": { "type": "string" },

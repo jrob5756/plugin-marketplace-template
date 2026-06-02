@@ -85,8 +85,87 @@ export function dumpYamlFrontmatter(obj, { quoteStrings = 'double' } = {}) {
 }
 
 /**
- * Strip a leading YAML frontmatter block from a markdown body.
- * Returns the body without the frontmatter.
+ * Detect a leading YAML frontmatter block in a markdown body. Returns the
+ * raw frontmatter (between the `---` markers) if present, otherwise null.
+ *
+ * The build never strips frontmatter silently — agents/skills bodies must be
+ * frontmatter-free in source. Callers use this to throw a helpful error.
+ */
+export function detectFrontmatter(text) {
+  if (!text.startsWith('---\n') && !text.startsWith('---\r\n')) return null;
+  const end = text.indexOf('\n---', 4);
+  if (end < 0) return null;
+  return text.slice(4, end);
+}
+
+/**
+ * Assert that a file body has no leading YAML frontmatter. If it does, throw
+ * a clear error pointing the author at the schema. Per-target frontmatter is
+ * generated from plugin.yaml — duplicating it in source would split the
+ * source of truth.
+ */
+export function assertNoFrontmatter(filePath, body) {
+  if (detectFrontmatter(body) !== null) {
+    throw new Error(
+      `${filePath}: leading YAML frontmatter detected. Source agent/skill ` +
+        `bodies must be frontmatter-free — declare metadata in plugin.yaml ` +
+        `instead. Per-target frontmatter is generated at build time.`,
+    );
+  }
+}
+
+/**
+ * Resolve `relativePath` against `baseDir` and refuse to leave the base
+ * directory. Returns the absolute resolved path on success; throws on
+ * traversal. Use for every source path read by the build.
+ */
+export function safeResolve(baseDir, relativePath) {
+  const resolved = path.resolve(baseDir, relativePath);
+  const baseAbs = path.resolve(baseDir);
+  if (resolved !== baseAbs && !resolved.startsWith(baseAbs + path.sep)) {
+    throw new Error(
+      `path escapes plugin root: '${relativePath}' resolves to '${resolved}', ` +
+        `outside of '${baseAbs}'. Use only paths within the plugin directory.`,
+    );
+  }
+  return resolved;
+}
+
+/**
+ * Normalize the polymorphic `hooks:` field in plugin.yaml into a single shape:
+ *   { path?: string, inline?: object, targets?: string[] }
+ * Accepts: undefined, a string path, an inline hooks object, or
+ * `{ path: ..., targets: [...] }`. Returns null if no hooks are declared.
+ */
+export function normalizeHooks(hooks) {
+  if (hooks === undefined || hooks === null) return null;
+  if (typeof hooks === 'string') return { path: hooks };
+  if (typeof hooks === 'object') {
+    // Disambiguate {path,targets} from an inline hooks event map by checking
+    // for the `path` key.
+    if (typeof hooks.path === 'string') {
+      return { path: hooks.path, targets: hooks.targets };
+    }
+    return { inline: hooks };
+  }
+  throw new Error(`invalid hooks value: ${JSON.stringify(hooks)}`);
+}
+
+/**
+ * Normalize the polymorphic `mcpServers:` field in plugin.yaml. Returns one
+ * of { path: string } or { inline: object }, or null when not declared.
+ */
+export function normalizeMcpServers(mcp) {
+  if (mcp === undefined || mcp === null) return null;
+  if (typeof mcp === 'string') return { path: mcp };
+  if (typeof mcp === 'object') return { inline: mcp };
+  throw new Error(`invalid mcpServers value: ${JSON.stringify(mcp)}`);
+}
+
+/**
+ * @deprecated retained for backward compatibility — use assertNoFrontmatter.
+ * Strip a leading YAML frontmatter block from a markdown body. Returns the
+ * body without the frontmatter.
  */
 export function stripFrontmatter(text) {
   if (!text.startsWith('---\n') && !text.startsWith('---\r\n')) return text;

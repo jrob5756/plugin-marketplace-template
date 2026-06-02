@@ -1,15 +1,18 @@
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import {
+  assertNoFrontmatter,
   copyDir,
   copyFile,
   dumpYamlFrontmatter,
   ensureDir,
+  normalizeHooks,
+  normalizeMcpServers,
   orderKeys,
   pathExists,
   pruneUndefined,
   rmrf,
-  stripFrontmatter,
+  safeResolve,
   writeJson,
   writeText,
 } from '../util.mjs';
@@ -81,8 +84,11 @@ async function writeManifest({ plugin, outDir }) {
   if (plugin.skills?.length) {
     manifest.skills = plugin.skills.map((s) => `./skills/${s.name}`);
   }
-  if (plugin.hooks) manifest.hooks = './hooks/hooks.json';
-  if (plugin.mcpServers) manifest.mcpServers = './.mcp.json';
+  const hooks = normalizeHooks(plugin.hooks);
+  if (hooks && (!hooks.targets || hooks.targets.includes(TARGET))) {
+    manifest.hooks = './hooks/hooks.json';
+  }
+  if (normalizeMcpServers(plugin.mcpServers)) manifest.mcpServers = './.mcp.json';
 
   const ordered = orderKeys(pruneUndefined(manifest), MANIFEST_FIELD_ORDER);
   await writeJson(path.join(outDir, '.claude-plugin', 'plugin.json'), ordered);
@@ -90,8 +96,9 @@ async function writeManifest({ plugin, outDir }) {
 
 async function writeAgents({ plugin, pluginDir, outDir }) {
   for (const agent of plugin.agents ?? []) {
-    const srcPath = path.join(pluginDir, agent.path);
-    const body = stripFrontmatter(await fs.readFile(srcPath, 'utf8'));
+    const srcPath = safeResolve(pluginDir, agent.path);
+    const body = await fs.readFile(srcPath, 'utf8');
+    assertNoFrontmatter(srcPath, body);
 
     const fm = pruneUndefined({
       name: agent.name,
@@ -112,9 +119,10 @@ async function writeAgents({ plugin, pluginDir, outDir }) {
 
 async function writeSkills({ plugin, pluginDir, outDir }) {
   for (const skill of plugin.skills ?? []) {
-    const srcDir = path.join(pluginDir, skill.path);
+    const srcDir = safeResolve(pluginDir, skill.path);
     const skillSrc = path.join(srcDir, 'SKILL.md');
-    const body = stripFrontmatter(await fs.readFile(skillSrc, 'utf8'));
+    const body = await fs.readFile(skillSrc, 'utf8');
+    assertNoFrontmatter(skillSrc, body);
 
     const fm = pruneUndefined({
       name: skill.name,
@@ -135,14 +143,26 @@ async function writeSkills({ plugin, pluginDir, outDir }) {
 }
 
 async function copySharedAssets({ plugin, pluginDir, outDir }) {
-  if (plugin.mcpServers) {
-    await copyFile(path.join(pluginDir, plugin.mcpServers), path.join(outDir, '.mcp.json'));
+  const mcp = normalizeMcpServers(plugin.mcpServers);
+  if (mcp) {
+    const mcpOut = path.join(outDir, '.mcp.json');
+    if (mcp.path) {
+      await copyFile(safeResolve(pluginDir, mcp.path), mcpOut);
+    } else {
+      await writeJson(mcpOut, mcp.inline);
+    }
   }
-  if (plugin.hooks) {
-    await copyFile(path.join(pluginDir, plugin.hooks), path.join(outDir, 'hooks', 'hooks.json'));
+  const hooks = normalizeHooks(plugin.hooks);
+  if (hooks && (!hooks.targets || hooks.targets.includes(TARGET))) {
+    const hooksOut = path.join(outDir, 'hooks', 'hooks.json');
+    if (hooks.path) {
+      await copyFile(safeResolve(pluginDir, hooks.path), hooksOut);
+    } else {
+      await writeJson(hooksOut, hooks.inline);
+    }
   }
   // Copy plugin-level scripts/ verbatim if present
-  const scriptsDir = path.join(pluginDir, 'scripts');
+  const scriptsDir = safeResolve(pluginDir, './scripts');
   if (await pathExists(scriptsDir)) {
     await copyDir(scriptsDir, path.join(outDir, 'scripts'), {
       skip: ['__pycache__', '.pytest_cache'],
