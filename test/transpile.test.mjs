@@ -5,12 +5,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readYaml } from '../tools/util.mjs';
 import * as claude from '../tools/transpilers/claude.mjs';
+import * as codex from '../tools/transpilers/codex.mjs';
 import * as copilot from '../tools/transpilers/copilot.mjs';
 import * as opencode from '../tools/transpilers/opencode.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, 'fixtures');
-const TARGETS = { claude, copilot, opencode };
+const TARGETS = { claude, codex, copilot, opencode };
 
 let workDir;
 
@@ -63,7 +64,7 @@ const fixtures = ['basic-agent', 'basic-skill', 'inline-mcp', 'hooks-targets'];
 
 for (const fixture of fixtures) {
   describe(`transpile fixture: ${fixture}`, () => {
-    for (const target of ['claude', 'copilot', 'opencode']) {
+    for (const target of ['claude', 'codex', 'copilot', 'opencode']) {
       it(`${target} output matches snapshot`, async () => {
         const dist = await buildFixture(fixture, target);
         const snap = await distSnapshot(dist);

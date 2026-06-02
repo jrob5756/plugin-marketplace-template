@@ -93,6 +93,32 @@
       "type": "array",
       "items": { "$ref": "#/$defs/skill" },
       "uniqueItems": true
+    },
+    "codex": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Codex CLI marketplace-display block. Maps to the `interface` field of the .codex-plugin/plugin.json manifest. All fields optional — sensible defaults are derived from displayName, author.name, homepage when omitted. See docs/codex.md.",
+      "properties": {
+        "displayName": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "longDescription": { "type": "string" },
+        "developerName": { "type": "string" },
+        "category": { "type": "string" },
+        "capabilities": { "type": "array", "items": { "type": "string" } },
+        "websiteURL": { "type": "string", "format": "uri" },
+        "privacyPolicyURL": { "type": "string", "format": "uri" },
+        "termsOfServiceURL": { "type": "string", "format": "uri" },
+        "defaultPrompt": {
+          "oneOf": [
+            { "type": "string", "maxLength": 128 },
+            { "type": "array", "items": { "type": "string", "maxLength": 128 }, "maxItems": 3 }
+          ]
+        },
+        "brandColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "composerIcon": { "type": "string" },
+        "logo": { "type": "string" },
+        "screenshots": { "type": "array", "items": { "type": "string" } }
+      }
     }
   },
   "$defs": {
@@ -107,7 +133,8 @@
         "argument-hint": { "type": "string" },
         "claude": { "$ref": "#/$defs/agentClaude" },
         "copilot": { "$ref": "#/$defs/agentCopilot" },
-        "opencode": { "$ref": "#/$defs/agentOpencode" }
+        "opencode": { "$ref": "#/$defs/agentOpencode" },
+        "codex": { "$ref": "#/$defs/agentCodex" }
       }
     },
     "agentClaude": {
@@ -175,7 +202,8 @@
         "argument-hint": { "type": "string" },
         "claude": { "$ref": "#/$defs/skillClaude" },
         "copilot": { "$ref": "#/$defs/skillCopilot" },
-        "opencode": { "$ref": "#/$defs/skillOpencode" }
+        "opencode": { "$ref": "#/$defs/skillOpencode" },
+        "codex": { "$ref": "#/$defs/skillCodex" }
       }
     },
     "skillClaude": {
@@ -227,6 +255,20 @@
           "additionalProperties": { "type": "string" }
         }
       }
+    },
+    "agentCodex": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Codex CLI-specific agent overrides. Strict-keyed fields are validated; unknown fields pass through. See docs/codex.md.",
+      "properties": {
+        "model": { "type": "string" },
+        "tools": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "skillCodex": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Codex CLI-specific skill overrides. Strict-keyed fields are validated; unknown fields pass through. See docs/codex.md."
     }
   }
 }

@@ -14,6 +14,7 @@ agent host.
 | Doc                        | Scope                                                                  |
 | -------------------------- | ---------------------------------------------------------------------- |
 | [claude.md](claude.md)     | Claude Code plugin layout, `plugin.json`, asset frontmatter, marketplace |
+| [codex.md](codex.md)       | OpenAI Codex CLI plugin layout, `.codex-plugin/plugin.json`, hooks, MCP, interface block |
 | [copilot.md](copilot.md)   | GitHub Copilot / VS Code plugin layout, `plugin.json`, `marketplace.json`, asset frontmatter |
 | [opencode.md](opencode.md) | OpenCode project layout, `opencode.json`, agents/commands/skills/plugins, permissions |
 

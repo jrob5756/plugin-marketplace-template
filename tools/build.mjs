@@ -14,6 +14,7 @@ import {
   writeJson,
 } from './util.mjs';
 import * as claude from './transpilers/claude.mjs';
+import * as codex from './transpilers/codex.mjs';
 import * as copilot from './transpilers/copilot.mjs';
 import * as opencode from './transpilers/opencode.mjs';
 
@@ -27,6 +28,7 @@ const MARKETPLACE_SCHEMA = path.join(__dirname, 'schemas', 'marketplace.schema.j
 
 const TARGETS = {
   claude: claude,
+  codex: codex,
   copilot: copilot,
   opencode: opencode,
 };
@@ -36,6 +38,7 @@ const TARGETS = {
 // per-bundle README.md files from inside their transpiler instead.
 const MARKETPLACE_FILES = {
   claude: ['.claude-plugin', 'marketplace.json'],
+  codex: ['.agents', 'plugins', 'marketplace.json'],
   copilot: ['.github', 'plugin', 'marketplace.json'],
 };
 
