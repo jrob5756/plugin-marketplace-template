@@ -1,0 +1,12 @@
+name: basic-agent
+version: 0.1.0
+description: "Fixture: single agent, no other components"
+
+agents:
+  - name: helper
+    path: ./agents/helper.md
+    description: "A helper agent for testing."
+    claude:
+      color: blue
+    copilot:
+      tools: [read, search]

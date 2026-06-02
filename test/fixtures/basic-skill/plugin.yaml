@@ -1,0 +1,9 @@
+name: basic-skill
+version: 0.1.0
+description: "Fixture: single skill, no agents"
+
+skills:
+  - name: my-skill
+    path: ./skills/my-skill
+    description: |
+      A skill that does things. Triggers: thing, stuff, etc.

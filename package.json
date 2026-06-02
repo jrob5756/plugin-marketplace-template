@@ -7,11 +7,14 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "validate": "node tools/build.mjs --validate-only",
-    "clean": "node tools/build.mjs --clean"
+    "clean": "node tools/build.mjs --clean",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "vitest": "4.1.8"
   }
 }

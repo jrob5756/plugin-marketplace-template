@@ -64,11 +64,6 @@
         },
         {
           "type": "object",
-          "additionalProperties": true,
-          "description": "Inline hooks object using the Claude Code hooks schema (event name -> array of matcher+hooks entries)."
-        },
-        {
-          "type": "object",
           "required": ["path"],
           "additionalProperties": false,
           "properties": {
@@ -80,6 +75,12 @@
               "description": "Restrict hook emission to specific targets. Defaults to all targets that support declarative hooks."
             }
           }
+        },
+        {
+          "type": "object",
+          "not": { "required": ["path"] },
+          "additionalProperties": true,
+          "description": "Inline hooks object using the Claude Code hooks schema (event name -> array of matcher+hooks entries). Must NOT have a top-level `path` key (that form uses the {path, targets} branch above)."
         }
       ]
     },
