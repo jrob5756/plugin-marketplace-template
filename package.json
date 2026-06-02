@@ -4,6 +4,9 @@
   "private": true,
   "description": "Template repository for building Claude Code, GitHub Copilot, and OpenCode plugin marketplaces from a single tool-agnostic source.",
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "build": "node tools/build.mjs",
     "validate": "node tools/build.mjs --validate-only",
