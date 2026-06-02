@@ -3,7 +3,6 @@ import { promises as fs } from 'node:fs';
 import {
   assertNoFrontmatter,
   copyDir,
-  copyFile,
   dumpYamlFrontmatter,
   ensureDir,
   normalizeHooks,
@@ -66,6 +65,7 @@ export async function transpile({ plugin, pluginDir, outRoot }) {
 
 async function writeAgents({ plugin, pluginDir, outDir }) {
   for (const agent of plugin.agents ?? []) {
+    if (agent.targets && !agent.targets.includes(TARGET)) continue;
     const srcPath = safeResolve(pluginDir, agent.path);
     const body = await fs.readFile(srcPath, 'utf8');
     assertNoFrontmatter(srcPath, body);

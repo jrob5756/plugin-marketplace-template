@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/main/tools/schemas/plugin.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/v0.2.0/tools/schemas/plugin.schema.json
 name: web
 description: Web research specialist agent with search and deep research skills
 version: 1.2.0
@@ -14,7 +14,9 @@ keywords:
   - documentation
 
 mcpServers: ./.mcp.json
-hooks: ./hooks/hooks.json
+hooks:
+  path: ./hooks/hooks.json
+  targets: [claude, copilot, codex]   # OpenCode has no declarative hooks
 
 agents:
   - name: web-searcher
@@ -24,6 +26,7 @@ agents:
       documentation, fetching article content, or researching topics across
       multiple sources. Returns concise summaries with source URLs for citation
       and further reading.
+    targets: [claude, copilot, opencode]   # Codex loads subagents from .codex/agents/ separately
     claude:
       color: green
     copilot:

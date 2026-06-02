@@ -25,7 +25,3 @@ Merge `opencode.mcp.json` into your `opencode.json` (or `~/.config/opencode/open
 ```bash
 cat opencode.mcp.json
 ```
-
-## Hooks
-
-> ⚠ This plugin defines hooks. OpenCode has no declarative hooks; port them to a JS/TS plugin under `.opencode/plugins/`. See your marketplace's `docs/opencode.md` for the JS plugin pattern, or add `targets: [claude, copilot]` to the hooks declaration in plugin.yaml to opt out of OpenCode-bound hook emission.

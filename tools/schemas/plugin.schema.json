@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/main/tools/schemas/plugin.schema.json",
+  "$id": "https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/v0.2.0/tools/schemas/plugin.schema.json",
   "title": "Plugin manifest (source)",
   "description": "Declarative source-of-truth manifest for a plugin. Transpiled into Claude Code and GitHub Copilot plugin formats.",
   "type": "object",
@@ -48,7 +48,8 @@
           "properties": {
             "mcpServers": {
               "type": "object",
-              "additionalProperties": { "type": "object" }
+              "minProperties": 1,
+              "additionalProperties": { "$ref": "#/$defs/mcpServer" }
             }
           }
         }
@@ -72,6 +73,7 @@
               "type": "array",
               "items": { "enum": ["claude", "copilot", "opencode", "codex"] },
               "uniqueItems": true,
+              "minItems": 1,
               "description": "Restrict hook emission to specific targets. Defaults to all targets that support declarative hooks."
             }
           }
@@ -96,25 +98,22 @@
     },
     "codex": {
       "type": "object",
-      "additionalProperties": true,
-      "description": "Codex CLI marketplace-display block. Maps to the `interface` field of the .codex-plugin/plugin.json manifest. All fields optional — sensible defaults are derived from displayName, author.name, homepage when omitted. See docs/codex.md.",
+      "additionalProperties": false,
+      "description": "Codex CLI marketplace-display block. Maps to the `interface` field of the .codex-plugin/plugin.json manifest. The fields below are Codex-specific (no analog in other targets); displayName, developerName, and websiteURL are derived from the top-level plugin.displayName / author.name / homepage and cannot be overridden here. See docs/codex.md.",
       "properties": {
-        "displayName": { "type": "string" },
         "shortDescription": { "type": "string" },
         "longDescription": { "type": "string" },
-        "developerName": { "type": "string" },
         "category": { "type": "string" },
         "capabilities": { "type": "array", "items": { "type": "string" } },
-        "websiteURL": { "type": "string", "format": "uri" },
         "privacyPolicyURL": { "type": "string", "format": "uri" },
         "termsOfServiceURL": { "type": "string", "format": "uri" },
         "defaultPrompt": {
           "oneOf": [
             { "type": "string", "maxLength": 128 },
-            { "type": "array", "items": { "type": "string", "maxLength": 128 }, "maxItems": 3 }
+            { "type": "array", "items": { "type": "string", "maxLength": 128 }, "minItems": 1, "maxItems": 3 }
           ]
         },
-        "brandColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "brandColor": { "type": "string", "pattern": "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
         "composerIcon": { "type": "string" },
         "logo": { "type": "string" },
         "screenshots": { "type": "array", "items": { "type": "string" } }
@@ -131,6 +130,13 @@
         "path": { "type": "string", "pattern": "^\\./" },
         "description": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "argument-hint": { "type": "string" },
+        "targets": {
+          "type": "array",
+          "items": { "enum": ["claude", "copilot", "opencode", "codex"] },
+          "uniqueItems": true,
+          "minItems": 1,
+          "description": "Restrict agent emission to specific targets. Defaults to all targets that support agents in their plugin format. Use this to silence the Codex warning when an agent is intentionally Claude/Copilot/OpenCode-only (Codex loads subagents from .codex/agents/, not from plugin manifests)."
+        },
         "claude": { "$ref": "#/$defs/agentClaude" },
         "copilot": { "$ref": "#/$defs/agentCopilot" },
         "opencode": { "$ref": "#/$defs/agentOpencode" },
@@ -269,6 +275,36 @@
       "type": "object",
       "additionalProperties": true,
       "description": "Codex CLI-specific skill overrides. Strict-keyed fields are validated; unknown fields pass through. See docs/codex.md."
+    },
+    "mcpServer": {
+      "type": "object",
+      "description": "A single MCP server entry. Either stdio (command + optional args/env) or remote (url + optional headers).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["command"],
+          "additionalProperties": true,
+          "properties": {
+            "type": { "enum": ["stdio", "local"] },
+            "command": { "type": "string", "minLength": 1 },
+            "args": { "type": "array", "items": { "type": "string" } },
+            "env": { "type": "object", "additionalProperties": { "type": "string" } },
+            "cwd": { "type": "string" }
+          },
+          "not": { "required": ["url"] }
+        },
+        {
+          "type": "object",
+          "required": ["url"],
+          "additionalProperties": true,
+          "properties": {
+            "type": { "enum": ["http", "sse", "ws", "remote"] },
+            "url": { "type": "string", "format": "uri" },
+            "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+          },
+          "not": { "required": ["command"] }
+        }
+      ]
     }
   }
 }

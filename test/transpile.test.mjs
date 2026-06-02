@@ -60,7 +60,7 @@ async function distSnapshot(distDir) {
   return chunks.join('\n');
 }
 
-const fixtures = ['basic-agent', 'basic-skill', 'inline-mcp', 'hooks-targets'];
+const fixtures = ['basic-agent', 'basic-skill', 'inline-mcp', 'hooks-targets', 'claude-tools'];
 
 for (const fixture of fixtures) {
   describe(`transpile fixture: ${fixture}`, () => {
@@ -130,5 +130,35 @@ describe('inline mcpServers', () => {
     const mcp = JSON.parse(await readFile(path.join(dist, 'opencode.mcp.json'), 'utf8'));
     expect(mcp.mcp['echo-server'].type).toBe('local');
     expect(mcp.mcp['echo-server'].command).toEqual(['echo', 'hello']);
+  });
+});
+
+describe('claude tools / disallowedTools array → CSV join', () => {
+  it('joins claude.tools array into a comma-separated string', async () => {
+    const dist = await buildFixture('claude-tools', 'claude');
+    const body = await readFile(path.join(dist, 'agents/dev.md'), 'utf8');
+    expect(body).toMatch(/^tools:\s*Read,\s*Edit,\s*Grep$/m);
+  });
+
+  it('joins claude.disallowedTools array into a comma-separated string', async () => {
+    const dist = await buildFixture('claude-tools', 'claude');
+    const body = await readFile(path.join(dist, 'agents/dev.md'), 'utf8');
+    expect(body).toMatch(/^disallowedTools:\s*Bash,\s*Write$/m);
+  });
+});
+
+describe('copilot description and tools post-processing', () => {
+  it("escapes apostrophes in single-quoted descriptions via YAML doubling ('')", async () => {
+    const dist = await buildFixture('claude-tools', 'copilot');
+    const body = await readFile(path.join(dist, 'agents/dev.agent.md'), 'utf8');
+    expect(body).toMatch(/description:\s*'Helper that''s tool-restricted\.'/);
+  });
+
+  it('emits tools as inline flow-style array with globs single-quoted', async () => {
+    const dist = await buildFixture('claude-tools', 'copilot');
+    const body = await readFile(path.join(dist, 'agents/dev.agent.md'), 'utf8');
+    expect(body).toMatch(
+      /tools:\s*\[read,\s*edit,\s*search,\s*'github\/\*',\s*'web-search\/\*'\]/,
+    );
   });
 });

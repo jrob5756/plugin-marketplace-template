@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/main/tools/schemas/marketplace.schema.json",
+  "$id": "https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/v0.2.0/tools/schemas/marketplace.schema.json",
   "title": "Marketplace manifest (source)",
   "description": "Marketplace-level metadata. Plugin entries are derived automatically at build time from every plugins/*/plugin.yaml.",
   "type": "object",

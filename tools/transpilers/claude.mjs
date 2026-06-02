@@ -96,6 +96,7 @@ async function writeManifest({ plugin, outDir }) {
 
 async function writeAgents({ plugin, pluginDir, outDir }) {
   for (const agent of plugin.agents ?? []) {
+    if (agent.targets && !agent.targets.includes(TARGET)) continue;
     const srcPath = safeResolve(pluginDir, agent.path);
     const body = await fs.readFile(srcPath, 'utf8');
     assertNoFrontmatter(srcPath, body);

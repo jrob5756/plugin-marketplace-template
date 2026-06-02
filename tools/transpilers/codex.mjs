@@ -95,24 +95,16 @@ async function writeManifest({ plugin, outDir }) {
   };
 
   // Codex's `interface` block is the marketplace-display surface
-  // (displayName, brand color, screenshots). Synthesize it from the
-  // tool-agnostic fields we already have.
+  // (displayName, brand color, screenshots). Synthesize it from
+  // tool-agnostic top-level fields, then layer in codex-specific extras.
+  // Per the schema, displayName/developerName/websiteURL are derived only
+  // from the top-level — they cannot be overridden in the codex block.
   const codexBlock = plugin.codex ?? {};
   const iface = pruneUndefined({
-    displayName: plugin.displayName ?? codexBlock.displayName,
-    shortDescription: codexBlock.shortDescription,
-    longDescription: codexBlock.longDescription,
-    developerName: plugin.author?.name ?? codexBlock.developerName,
-    category: codexBlock.category,
-    capabilities: codexBlock.capabilities,
-    websiteURL: plugin.homepage ?? codexBlock.websiteURL,
-    privacyPolicyURL: codexBlock.privacyPolicyURL,
-    termsOfServiceURL: codexBlock.termsOfServiceURL,
-    defaultPrompt: codexBlock.defaultPrompt,
-    brandColor: codexBlock.brandColor,
-    composerIcon: codexBlock.composerIcon,
-    logo: codexBlock.logo,
-    screenshots: codexBlock.screenshots,
+    ...codexBlock,
+    displayName: plugin.displayName,
+    developerName: plugin.author?.name,
+    websiteURL: plugin.homepage,
   });
   if (Object.keys(iface).length > 0) {
     manifest.interface = orderKeys(iface, INTERFACE_FIELD_ORDER);
@@ -133,12 +125,19 @@ async function writeManifest({ plugin, outDir }) {
 
 function maybeWarnAgents({ plugin }) {
   if (!plugin.agents?.length) return;
+  // Authors who explicitly scope agents to other targets opt out of the warning.
+  const targeted = plugin.agents.filter(
+    (a) => !a.targets || a.targets.includes(TARGET),
+  );
+  if (targeted.length === 0) return;
   console.warn(
-    `  ⚠ ${plugin.name}: ${plugin.agents.length} agent(s) defined but not ` +
+    `  ⚠ ${plugin.name}: ${targeted.length} agent(s) defined but not ` +
       `emitted in the Codex bundle. Codex loads subagents from ` +
       `.codex/agents/*.toml or $CODEX_HOME/agents/, not from plugin manifests. ` +
       `Install agents via the dist/claude/ bundle (Codex auto-migrates ` +
-      `.claude/agents/*.md to TOML) or hand-author .codex/agents/<name>.toml.`,
+      `.claude/agents/*.md to TOML) or hand-author .codex/agents/<name>.toml. ` +
+      `To silence this warning, add \`targets: [claude, copilot, opencode]\` ` +
+      `to the agent declaration in plugin.yaml.`,
   );
 }
 
@@ -174,12 +173,15 @@ async function copySharedAssets({ plugin, pluginDir, outDir }) {
   const mcp = normalizeMcpServers(plugin.mcpServers);
   if (mcp) {
     const mcpOut = path.join(outDir, '.mcp.json');
+    let mcpText;
     if (mcp.path) {
-      await copyFile(safeResolve(pluginDir, mcp.path), mcpOut);
+      mcpText = await fs.readFile(safeResolve(pluginDir, mcp.path), 'utf8');
+      await writeText(mcpOut, mcpText);
     } else {
-      await writeJson(mcpOut, mcp.inline);
+      mcpText = JSON.stringify(mcp.inline, null, 2) + '\n';
+      await writeText(mcpOut, mcpText);
     }
-    await maybeWarnPluginRoot({ pluginDir, mcpFile: mcpOut, pluginName: plugin.name });
+    warnIfPluginRootUsed(mcpText, plugin.name);
   }
 
   const hooks = normalizeHooks(plugin.hooks);
@@ -202,21 +204,17 @@ async function copySharedAssets({ plugin, pluginDir, outDir }) {
 
 /**
  * Codex does not expand ${CLAUDE_PLUGIN_ROOT} (or any equivalent variable)
- * inside MCP server command/args. Warn at build time so the plugin author
- * has a chance to either rewrite the command or document the gap.
+ * inside MCP server command/args. Warn at build time when the MCP config
+ * references one so the plugin author can rewrite the command. Match the
+ * common spellings: `$NAME`, `${NAME}`, with or without case.
  */
-async function maybeWarnPluginRoot({ pluginDir, mcpFile, pluginName }) {
-  try {
-    const text = await fs.readFile(mcpFile, 'utf8');
-    if (/\$\{?CLAUDE_PLUGIN_ROOT|\$\{?CODEX_PLUGIN_ROOT/.test(text)) {
-      console.warn(
-        `  ⚠ ${pluginName}: MCP config references \${CLAUDE_PLUGIN_ROOT} or ` +
-          `\${CODEX_PLUGIN_ROOT}, but Codex CLI does not expand these in plugin ` +
-          `MCP commands. Use an absolute path or an executable on \$PATH instead.`,
-      );
-    }
-  } catch {
-    /* file unreadable: skip warning */
+function warnIfPluginRootUsed(mcpText, pluginName) {
+  if (/\$\{?(?:CLAUDE_PLUGIN_ROOT|CODEX_PLUGIN_ROOT|PLUGIN_ROOT)\}?/i.test(mcpText)) {
+    console.warn(
+      `  ⚠ ${pluginName}: MCP config references \${CLAUDE_PLUGIN_ROOT} or ` +
+        `equivalent, but Codex CLI does not expand these in plugin MCP ` +
+        `commands. Use an absolute path or an executable on \$PATH instead.`,
+    );
   }
 }
 

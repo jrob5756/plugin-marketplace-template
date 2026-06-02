@@ -9,7 +9,7 @@ is enforced on every build (`npm run validate`). Editors that respect the
 ## At a glance
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/main/tools/schemas/plugin.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jrob5756/plugin-marketplace-template/v0.2.0/tools/schemas/plugin.schema.json
 
 name: my-plugin                 # required, kebab-case, matches dir
 version: 1.0.0                  # required, semver
@@ -202,6 +202,14 @@ prompts via `${CLAUDE_PLUGIN_ROOT}/scripts/...`. Note that OpenCode does
 NOT honor `${CLAUDE_PLUGIN_ROOT}` — for OpenCode-targeting plugins, use
 absolute paths or env vars set in `environment:`.
 
+## Schema versioning
+
+The `$id` in both schemas points at a specific git tag
+(`/v0.2.0/...`), not `/main/...`. This means editor tooling using the
+`yaml-language-server` modeline will not silently break when this repo's
+`main` evolves. Bump the tag in the `$id` URLs (and in your own
+`plugin.yaml` modelines) only when adopting a new template release.
+
 ## See also
 
 - [`docs/agents.md`](agents.md) — agent design and tool restrictions
@@ -209,5 +217,6 @@ absolute paths or env vars set in `environment:`.
 - [`docs/hooks.md`](hooks.md) — hook patterns
 - [`docs/mcp-servers.md`](mcp-servers.md) — MCP server config patterns
 - [`docs/claude.md`](claude.md) — Claude Code native format
+- [`docs/codex.md`](codex.md) — OpenAI Codex CLI native format
 - [`docs/copilot.md`](copilot.md) — Copilot native format
 - [`docs/opencode.md`](opencode.md) — OpenCode native format
