@@ -26,16 +26,19 @@ Adding a fifth target is a drop-in transpiler — see
 
 ### 1. Get your own copy
 
-The easiest path is the **"Use this template"** button on GitHub, which creates
-a fresh repo wired to your account with full history-free ownership.
+Create a new repo from this template — that gives you a fresh repo wired to
+your account with no shared history.
 
-Or clone manually:
+- **In the GitHub UI:** click the **"Use this template" → "Create a new repository"**
+  button at the top of [this repo](https://github.com/jrob5756/plugin-marketplace-template).
+- **From the CLI:**
 
-```bash
-git clone https://github.com/<you>/plugin-marketplace-template my-plugins
-cd my-plugins
-rm -rf .git && git init                # optional: start fresh
-```
+  ```bash
+  gh repo create my-plugins --template jrob5756/plugin-marketplace-template --public --clone
+  cd my-plugins
+  ```
+
+Then install and build (next step).
 
 ### 2. Install and build
 
@@ -120,6 +123,42 @@ The MCP server it pulls in (`open-websearch`) is free, runs locally via
 
 See [AGENTS.md](AGENTS.md) for the full schema reference, per-target field
 support, and conventions.
+
+## Keeping your repo in sync with the template
+
+GitHub doesn't give template-derived repos a built-in "Sync" button (that's a
+fork-only feature), but you can keep build tooling, schemas, and docs current
+by adding this repo as a remote and merging periodically.
+
+**One-time setup**, after creating your repo:
+
+```bash
+# Add the template as an upstream remote
+git remote add template https://github.com/jrob5756/plugin-marketplace-template.git
+
+# Tell git that paths marked `merge=ours` in .gitattributes should keep the
+# local version when merging from upstream (driver is /bin/true — always succeeds)
+git config merge.ours.driver true
+```
+
+**To pull in upstream changes:**
+
+```bash
+git fetch template
+git merge template/main
+npm run build               # regenerate dist/ after the merge
+```
+
+A checked-in [`.gitattributes`](.gitattributes) already marks your
+downstream-owned paths (`plugins/**`, `marketplace.yaml`, `dist/**`) as
+`merge=ours`, so upstream edits to `tools/`, `docs/`, `AGENTS.md`, etc. flow
+through cleanly while your own plugins and marketplace metadata stay
+untouched.
+
+> **Note:** Because `plugins/** merge=ours` protects everything under
+> `plugins/`, you will not automatically receive new sample plugins or
+> updates to the existing `plugins/web/` sample. Cherry-pick those manually
+> if you want them (e.g. `git checkout template/main -- plugins/web`).
 
 ## Commands
 
